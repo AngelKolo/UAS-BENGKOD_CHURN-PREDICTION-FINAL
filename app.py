@@ -37,13 +37,11 @@ def load_resource():
         with open(model_path, 'rb') as f:
             data = pickle.load(f)
         
-        # Mengambil model dan preprocessor dari dictionary
         return data['model'], data['preprocessor']
     except Exception as e:
         st.error(f"Gagal memuat model: {str(e)}")
         return None
 
-# Inisialisasi model dan preprocessor
 resource = load_resource()
 if resource:
     model, preprocessor = resource
@@ -147,7 +145,6 @@ with tab1:
     st.markdown("---")
     if st.button("PREDIKSI CHURN", use_container_width=True, type="primary"):
         if model is not None and preprocessor is not None:
-            # Buat DataFrame input
             input_df = pd.DataFrame([{
                 'gender': gender, 'SeniorCitizen': senior_citizen, 'Partner': partner,
                 'Dependents': dependents, 'tenure': tenure, 'PhoneService': phone_service,
@@ -161,46 +158,51 @@ with tab1:
             }])
             
             try:
-                # Transformasi data menggunakan preprocessor yang dimuat
                 input_preprocessed = preprocessor.transform(input_df)
-                
-                # Prediksi
                 prediction = model.predict(input_preprocessed)[0]
-                proba = model.predict_proba(input_preprocessed)[0]
+                proba = model.predict_proba(input_preprocessed)[0] # [Prob No Churn, Prob Churn]
                 
                 st.header("Hasil Prediksi")
                 res_col1, res_col2 = st.columns(2)
                 
                 with res_col1:
                     if prediction == 1:
-                        st.error("PELANGGAN BERPOTENSI CHURN")
-                        st.write("Rekomendasi: Berikan penawaran khusus atau diskon retensi.")
+                        st.error("### KESIMPULAN: PELANGGAN BERPOTENSI CHURN")
+                        st.write("Rekomendasi: Segera berikan penawaran khusus, diskon retensi, atau hubungi pelanggan untuk menanyakan kendala layanan.")
                     else:
-                        st.success("PELANGGAN TIDAK CHURN")
-                        st.write("Rekomendasi: Pertahankan kualitas layanan dan program loyalitas.")
+                        st.success("### KESIMPULAN: PELANGGAN TIDAK CHURN")
+                        st.write("Rekomendasi: Pertahankan kualitas layanan, berikan reward loyalitas, dan tawarkan upgrade layanan secara berkala.")
                 
                 with res_col2:
-                    st.write(f"Probabilitas Churn: {proba[1]*100:.2f}%")
+                    st.subheader("Analisis Probabilitas")
+                    
+                    # Kolom probabilitas Tidak Churn
+                    st.write(f"Probabilitas Tidak Churn: **{proba[0]*100:.2f}%**")
+                    st.progress(float(proba[0]))
+                    
+                    # Kolom probabilitas Churn
+                    st.write(f"Probabilitas Churn: **{proba[1]*100:.2f}%**")
                     st.progress(float(proba[1]))
+                    
             except Exception as e:
                 st.error(f"Error saat pemrosesan data: {e}")
         else:
             st.error("Model atau Preprocessor tidak tersedia.")
 
 # ============================================================================
-# TAB 2 & 3 (PANDUAN & TENTANG) - Versi Ringkas Tanpa Emoji
+# TAB 2 & 3 (PANDUAN & TENTANG)
 # ============================================================================
 with tab2:
     st.header("Panduan Penggunaan")
     st.write("1. Masukkan data profil pelanggan pada form prediksi.")
     st.write("2. Klik tombol Prediksi Churn.")
-    st.write("3. Hasil akan muncul berupa status potensi churn dan persentase probabilitas.")
+    st.write("3. Hasil akan muncul berupa status potensi churn dan persentase probabilitas untuk kedua kategori.")
 
 with tab3:
     st.header("Tentang Model")
     st.write("Model ini dikembangkan menggunakan dataset Telco Customer Churn.")
-    st.write("Algoritma: Logistic Regression / Random Forest / Voting Classifier.")
-    st.write("Teknik: SMOTE digunakan untuk menangani ketidakseimbangan data.")
+    st.write("Algoritma: Logistic Regression / Random Forest / Voting Classifier (tergantung hasil training terbaik).")
+    st.write("Teknik: SMOTE digunakan untuk menangani ketidakseimbangan data agar prediksi lebih adil terhadap kelas minoritas (Churn).")
 
 st.markdown("---")
 st.markdown("<div style='text-align: center'>2025 UAS Bengkel Koding - Data Science</div>", unsafe_allow_html=True)
